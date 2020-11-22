@@ -1,8 +1,13 @@
 {
-  "realm": "Draftcab",
+  "realm": "draftcab",
   "auth-server-url": "http://localhost:8080/auth/",
   "ssl-required": "external",
-  "resource": "myclient",
-  "public-client": true,
-  "confidential-port": 0
+  "resource": "keycloak-connect",
+  "verify-token-audience": true,
+  "credentials": {
+    "secret": "308ddfb4-524d-4743-9ba0-1761e68ffa73"
+  },
+  "use-resource-role-mappings": true,
+  "confidential-port": 0,
+  "policy-enforcer": {}
 }

@@ -16,7 +16,7 @@ app.use(cors());
 var memoryStore = new session.MemoryStore();
 
 app.use(session({
-  secret: 'some secret',
+  secret: 'super secret',
   resave: false,
   saveUninitialized: true,
   store: memoryStore
@@ -27,25 +27,35 @@ var keycloak = new Keycloak({
 });
 
 app.use(keycloak.middleware({
-  logout: '/logout',
-  admin: '/'
-}));
+        logout: '/logout'
+    }));
+
+
+app.get('/', function (req, res) {
+  res.send("HOME");
+});
+
+
+app.get('/logout', function (req, res) {
+  res.json({message: 'logged out'});
+});
+
 
 app.get('/service/public', function (req, res) {
   res.json({message: 'public'});
 });
 
-app.get('/service/secured', keycloak.protect('user'), function (req, res) {
+app.get('/service/secured', keycloak.protect('realm:user'), function (req, res) {
   res.json({message: 'secured'});
 });
 
-app.get('/service/admin', keycloak.protect('admin'), function (req, res) {
+app.get('/service/admin', keycloak.protect('realm:admin'), function (req, res) {
   res.json({message: 'admin'});
 });
 
-app.use('*', function (req, res) {
-  res.send(JSON.stringify(req.cookies));
-});
+// app.use('*', function (req, res) {
+//   res.send("404");
+// });
 
 app.listen(9000, function () {
   console.log('Started at port 9000');
