@@ -1,51 +1,62 @@
-const path = require('path');
-const express = require('express');
-const multer  = require('multer');
-
+var express = require('express');
 var session = require('express-session');
+var bodyParser = require('body-parser');
 var Keycloak = require('keycloak-connect');
+var cors = require('cors');
+
+var app = express();
+app.use(bodyParser.json());
+
+// Enable CORS support
+app.use(cors());
+
+// Create a session-store to be used by both the express-session
+// middleware and the keycloak middleware.
+
 var memoryStore = new session.MemoryStore();
-var keycloak = new Keycloak({ store: memoryStore });
 
+app.use(session({
+  secret: 'super secret',
+  resave: false,
+  saveUninitialized: true,
+  store: memoryStore
+}));
 
-const upload = multer({ dest: 'dist/uploads/' });
-const app = express();
-const port = process.env.PORT || 9000;
-
-
-
-app.use(express.static(path.join(__dirname, '/dist')));
-app.use( keycloak.middleware() );
-
-app.get('/health', (req, res) => {
-  res.send("UP");
+var keycloak = new Keycloak({
+  store: memoryStore
 });
 
-const checkSsoHandler = (req, res) => {
-	res.send("checkSSOHandler");
-};
-
-const complaintHandler = (req, res) => {
-	res.send("complaintHandler");
-};
-
-app.get('/check-sso', keycloak.checkSso(), checkSsoHandler);
-app.get('/complain', keycloak.protect(), complaintHandler);
+app.use(keycloak.middleware({
+        logout: '/logout'
+    }));
 
 
-
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname + '/dist/index.html'));
+app.get('/', function (req, res) {
+  res.send("HOME");
 });
-app.post('/uploadAudio', upload.single('selectedAudioFileField'), (req, res, next) => {
-  console.log(req.file);
-})
-app.listen(port, () => console.log(`Listening on port ${port}`));
 
 
+app.get('/logout', function (req, res) {
+  res.json({message: 'logged out'});
+});
 
 
+app.get('/service/public', function (req, res) {
+  res.json({message: 'public'});
+});
 
+app.get('/service/secured', keycloak.protect('realm:user'), function (req, res) {
+  res.json({message: 'secured'});
+});
 
+app.get('/service/admin', keycloak.protect('realm:admin'), function (req, res) {
+  res.json({message: 'admin'});
+});
 
+// app.use('*', function (req, res) {
+//   res.send("404");
+// });
 
+app.listen(9000, function () {
+  console.log('Started at port 9000');
+});
